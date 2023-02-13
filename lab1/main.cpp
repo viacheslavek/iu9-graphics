@@ -6,6 +6,7 @@
 #include <iostream>
 
 float degree = 0.0;
+int cnt = 10;
 
 void key(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
@@ -23,6 +24,14 @@ void key(GLFWwindow *window, int key, int scancode, int action, int mods)
         {
             degree -= 0.2f;
         }
+        else if (key == GLFW_KEY_LEFT)
+        {
+            cnt -= 2;
+        }
+        else if (key == GLFW_KEY_RIGHT)
+        {
+            cnt += 2;
+        }
     }
 }
 
@@ -36,7 +45,6 @@ void display(GLFWwindow *window)
     glScalef(0.6, 0.6, 1);                    // изменяем мастштаб
 
     float x, y;
-    int cnt = 1000;
     float l = 0.5;
     float a = M_PI * 2 / cnt;
 
