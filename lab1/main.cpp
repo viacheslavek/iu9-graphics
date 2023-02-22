@@ -8,35 +8,27 @@
 float degree = 0.0;
 int cnt = 10;
 
-void key(GLFWwindow *window, int key, int scancode, int action, int mods)
-{
-    if (action == GLFW_PRESS)
-    {
-        if (key == GLFW_KEY_ESCAPE)
-        {
+void key(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS) {
+        if (key == GLFW_KEY_ESCAPE) {
             glfwSetWindowShouldClose(window, GL_TRUE);
         }
-        else if (key == GLFW_KEY_UP)
-        {
+        else if (key == GLFW_KEY_UP) {
             degree += 0.2f;
         }
-        else if (key == GLFW_KEY_DOWN)
-        {
+        else if (key == GLFW_KEY_DOWN) {
             degree -= 0.2f;
         }
-        else if (key == GLFW_KEY_LEFT)
-        {
+        else if (key == GLFW_KEY_LEFT) {
             cnt -= 2;
         }
-        else if (key == GLFW_KEY_RIGHT)
-        {
+        else if (key == GLFW_KEY_RIGHT) {
             cnt += 2;
         }
     }
 }
 
-void display(GLFWwindow *window)
-{
+void display(GLFWwindow *window) {
     glClear(GL_COLOR_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();                         // перемещаем в центр СК
@@ -62,15 +54,14 @@ void display(GLFWwindow *window)
     glPopMatrix();
 }
 
-int main(int argc, char const *argv[])
-{
-    if (!glfwInit())
+int main(int argc, char const *argv[]) {
+    if (!glfwInit()) {
         exit(1);
+    }
 
     GLFWwindow *window = glfwCreateWindow(640, 480, "Lab 1", NULL, NULL);
 
-    if (window == NULL)
-    {
+    if (window == NULL) {
         glfwTerminate();
         exit(1);
     }
@@ -79,8 +70,7 @@ int main(int argc, char const *argv[])
     glfwSwapInterval(1);
     glfwSetKeyCallback(window, key);
 
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)) {
         display(window);
         glfwSwapBuffers(window);
         glfwPollEvents();
