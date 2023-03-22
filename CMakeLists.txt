@@ -21,3 +21,4 @@ message("FOUND GLUT - ${GLUT_FOUND}")
 
 add_subdirectory(lab1)
 add_subdirectory(lab2)
+add_subdirectory(lab3)

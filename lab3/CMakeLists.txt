@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project("lab2")
+project("lab3")
 
 file(GLOB LAB_SOURCES *.cpp)
 
