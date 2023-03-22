@@ -1,30 +1,62 @@
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
-
-#include <math.h>
-
+#include <cmath>
 #include <iostream>
+#include <array>
 
-float sizeMini = 0.2;
-float degree = 0.0;
-float sizeBig = 0.4;
+using std::sin, std::cos;
 
-void key(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    // добавляю кручение на объект
-    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-        if (key == GLFW_KEY_ESCAPE) {
-            glfwSetWindowShouldClose(window, GL_TRUE);
+float statick_theta = 0.6f;
+float statick_phi = 0.7f;
+float theta = 0.65f;
+float phi= 0.74f;
+float alpha = 0.f;
+float beta = 0.f;
+bool flag = false;
+
+const GLfloat* get_dimetric_matrix(GLfloat theta, GLfloat phi) {
+    return new GLfloat[16] {
+            cos(phi), sin(phi)*sin(theta), sin(phi)*cos(theta), 0,
+            0, cos(theta), -sin(theta), 0,
+            sin(phi), -cos(phi)*sin(theta), -cos(phi)*cos(theta), 0,
+            0, 0, 0, 1
+    };
+}
+
+const GLfloat* get_turn_matrix(GLfloat statick_theta, GLfloat statick_phi ) {
+    return new GLfloat[16] {
+            cos(statick_phi), sin(statick_phi )*sin(statick_theta), sin(statick_theta)*cos(statick_theta), 0,
+            0, cos(statick_theta), -sin(statick_theta), 0,
+            sin(statick_phi), -cos(phi)*sin(statick_theta), -cos(phi)*cos(statick_theta), 0,
+            0, 0, 0, 1
+    };
+}
+
+void key(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS || action == GLFW_REPEAT)
+    {
+        if (key == GLFW_KEY_RIGHT) {
+            alpha += 0.1;
+        }
+        else if (key == GLFW_KEY_LEFT) {
+            alpha -= 0.1;
         }
         else if (key == GLFW_KEY_UP) {
-            degree += 2.0f;
+            beta += 0.1;
         }
         else if (key == GLFW_KEY_DOWN) {
-            degree -= 2.0f;
+            beta -= 0.1;
         }
+        else if (key == GLFW_KEY_Q) {
+            flag = !flag;
+        }
+
+        else if (key == GLFW_KEY_ESCAPE)
+            glfwSetWindowShouldClose(window, true);
     }
 }
 
-void drowCubeSimple(GLFWwindow *window, float size) {
+void draw_cube_simple(float size) {
     glBegin(GL_QUADS);
 
     glColor3f(0.f, 0.0f, 1.f);
@@ -66,64 +98,67 @@ void drowCubeSimple(GLFWwindow *window, float size) {
     glEnd();
 }
 
-void printQubeMini(GLFWwindow *window) {
-
-    glLoadIdentity();
-    glRotatef(115.f, 1.f, 0.5f, 0.f);
-
-    glTranslatef(0.7f, 0.4f, 0.2f);
-
-    drowCubeSimple(window, sizeMini);
-
-    glPopMatrix();
+float get_theta(float xx, float yx) {
+    float fz = sqrt(xx*xx + yx*yx) / sqrt(2);
+    return asin(fz);
 }
 
-void printQubeBig(GLFWwindow *window) {
-
-    glLoadIdentity();
-
-    glRotatef(degree + 115.f, 1.f, 0.5f, 0.f);
-
-    float fi = 45.f;
-    float te = 35.26f;
-
-    GLfloat m[4][4] = {
-            {cos(fi), 0.0f, sin(fi), 0.0f},
-            {sin(fi)*sin(te), cos(te), -cos(fi)*sin(te), 0.0f},
-            {sin(fi)*cos(te), -sin(te), -cos(fi)*cos(te), 0.0f},
-            {0.0f, 0.0f, 0.0f, 1.0f}
-    };
-    glMultMatrixf(&m[0][0]);
-
-    glPushMatrix();
-    drowCubeSimple(window, sizeBig);
-
-    glPopMatrix();
+float get_phi(float xy, float yy) {
+    float fz = sqrt(xy*xy + yy*yy);
+    fz = fz / sqrt(2 - fz*fz);
+    return asin(fz);
 }
 
-
-void display(GLFWwindow *window) {
-
+void display (GLFWwindow* window) {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(1.f, 1.f, 1.f, 1.f);
-    glMatrixMode(GL_MODELVIEW);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glLoadIdentity();
+    glPushMatrix();
+    glMatrixMode(GL_PROJECTION);
 
-    printQubeMini(window);
+    const GLfloat* m2 = get_turn_matrix(theta, phi);
+    const GLfloat* translet_matrix = new GLfloat[16] {
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0.8, 0.8, 0, 1
+    };
 
-    printQubeBig(window);
+    glMultMatrixf(translet_matrix);
+    glMultMatrixf(m2);
+    draw_cube_simple(0.2);
 
-}
-
-int main(int argc, char const *argv[]) {
-    if (!glfwInit()) {
-        exit(1);
+    glPopMatrix();
+    glPushMatrix();
+    if (flag) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    } else {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
-    GLFWwindow *window = glfwCreateWindow(640, 480, "Lab 2", NULL, NULL);
+    theta = get_theta(0.7, 0.7);
+    phi = get_phi(0.7, 0.7);
+
+    const GLfloat* m = get_dimetric_matrix(theta + beta, phi + alpha);
+    glMatrixMode(GL_PROJECTION);
+    glMultMatrixf(m);
+    draw_cube_simple(0.7);
+
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+    delete[] m;
+    delete[] translet_matrix;
+    delete[] m2;
+}
+
+int main() {
+
+    if (!glfwInit())
+        return -1;
+
+    GLFWwindow* window = glfwCreateWindow(860, 860, "lab2", NULL, NULL);
 
     if (window == NULL) {
         glfwTerminate();
@@ -131,18 +166,14 @@ int main(int argc, char const *argv[]) {
     }
 
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
     glfwSetKeyCallback(window, key);
 
     while (!glfwWindowShouldClose(window)) {
         display(window);
-        glfwSwapBuffers(window);
-        glfwPollEvents();
     }
 
     glfwDestroyWindow(window);
     glfwTerminate();
+
     return 0;
 }
-
-
