@@ -64,7 +64,27 @@ def draw_polygon(coord_x, coord_y, upright, down_left, vertices):
                  vertices[len(vertices) - 1][1])
 
 
-result = [[217, 223], [149, 322], [191, 392], [261, 391], [312, 311], [254, 221]]
+def clear_polygon():
+    global coord_x_cut, coord_y_cut, flag, upright_cut, down_left_cut, vertices_cut, \
+        coord_x_polygon, coord_y_polygon, upright_polygon, down_left_polygon, vertices_polygon
+    coord_x_cut = 0
+    coord_y_cut = 0
+    vertices_cut = []
+    flag = 0
+    down_left_cut = [window_width, window_height]
+    upright_cut = [0, 0]
+
+    coord_x_polygon = 0
+    coord_y_polygon = 0
+    vertices_polygon = []
+
+    upright_polygon = [0, 0]
+    down_left_polygon = [window_width, window_height]
+
+    for i in range(0, 1000 * 1000):
+        buffer[i * 3] = 0
+        buffer[i * 3 + 1] = 0
+        buffer[i * 3 + 2] = 0
 
 
 def draw_all_polygon_on_vertices(vertices):
@@ -102,36 +122,100 @@ def key_callback(window, key, scancode, action, mods):
                 drawline(vertices_polygon[len(vertices_polygon) - 1][0],
                          vertices_polygon[len(vertices_polygon) - 1][1], vertices_polygon[0][0], vertices_polygon[0][1])
             else:
-                coord_x_cut = 0
-                coord_y_cut = 0
-                vertices_cut = []
-                flag = 0
-                down_left_cut = [window_width, window_height]
-                upright_cut = [0, 0]
+                clear_polygon()
 
-                coord_x_polygon = 0
-                coord_y_polygon = 0
-                vertices_polygon = []
-
-                upright_polygon = [0, 0]
-                down_left_polygon = [window_width, window_height]
-
-                for i in range(0, 1000 * 1000):
-                    buffer[i * 3] = 0
-                    buffer[i * 3 + 1] = 0
-                    buffer[i * 3 + 2] = 0
         if key == glfw.KEY_F:
-            # cut_string = get_str_clockwise(vertices_cut)
-            # polygon_string = get_str_clockwise(vertices_polygon)
-            # result_string = PolyClipping(cut_string, polygon_string, False)
-            # TODO: строю по полученной результирующей строке "x y x y" новые многоугольники
-            draw_all_polygon_on_vertices(result)
+            cut_string = get_str_clockwise(vertices_cut)
+            polygon_string = get_str_clockwise(vertices_polygon)
+            result_string = PolyClipping(cut_string, polygon_string, False)
+            if flag == 2:
+                print(result_string)
+
+                # Хочу ли я очищать окно перед выведением прямоугольников
+                clear_polygon()
+
+                for i in range(len(result_string)):
+                    resulter = get_points_from_str(result_string[i])
+                    print(resulter)
+                    draw_all_polygon_on_vertices(resulter)
+            # строю по полученной результирующей строке "x y x y" новые многоугольники
 
 
-# TODO: сделать функцию, которая список вершин преобразует в список вершин по часовой стрелке,
-#  а потом переводит это в строчный формат вида "x y x y ..."
+# функция, которая список вершин преобразует в список вершин по часовой стрелке - алгоритм Грэхема
+def get_clockwise_order(points):
+    # Находим точку с наименьшей координатой y
+    min_y = float('inf')
+    first_point = None
+    for point in points:
+        if point[1] < min_y:
+            min_y = point[1]
+            first_point = point
+        elif point[1] == min_y and point[0] < first_point[0]:
+            first_point = point
+
+    # Сортируем оставшиеся точки по углу
+    def cmp_to_key(mycmp):
+
+        class K:
+            def __init__(self, obj, *args):
+                self.obj = obj
+
+            def __lt__(self, other):
+                return mycmp(self.obj, other.obj) < 0
+
+            def __gt__(self, other):
+                return mycmp(self.obj, other.obj) > 0
+
+            def __eq__(self, other):
+                return mycmp(self.obj, other.obj) == 0
+
+            def __le__(self, other):
+                return mycmp(self.obj, other.obj) <= 0
+
+            def __ge__(self, other):
+                return mycmp(self.obj, other.obj) >= 0
+
+            def __ne__(self, other):
+                return mycmp(self.obj, other.obj) != 0
+
+        return K
+
+    def compare(p1, p2):
+        angle1 = math.atan2(p1[1] - first_point[1], p1[0] - first_point[0])
+        angle2 = math.atan2(p2[1] - first_point[1], p2[0] - first_point[0])
+        return angle1 - angle2
+
+    sorted_points = sorted(filter(lambda p: p != first_point, points), key=cmp_to_key(compare))
+
+    # Обходим отсортированный массив и добавляем точки в новый массив
+    clockwise_points = [first_point]
+    for current_point in sorted_points:
+        while len(clockwise_points) >= 2 and orientation(clockwise_points[-2], clockwise_points[-1], current_point) < 0:
+            clockwise_points.pop()
+        clockwise_points.append(current_point)
+
+    return clockwise_points
+
+
+# Функция определения ориентации точек (вернет отрицательное значение, если точки расположены против часовой стрелки)
+def orientation(p1, p2, p3):
+    return (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (p3[0] - p1[0])
+
+
+# Функция, которая переводит это в строчный формат вида "x y x y ..."
 def get_str_clockwise(arr_coordinate):
-    return ""
+    return ' '.join([f'{x} {y}' for x, y in arr_coordinate])
+
+
+# Функция, которая преобразует строку в массив точек
+def get_points_from_str(s):
+    points = []
+    tokens = s.split()  # Разделяем строку на элементы по пробелам
+    for i in range(0, len(tokens), 2):
+        # Преобразуем каждую пару элементов в координаты и добавляем их в массив "points"
+        x, y = float(tokens[i]), float(tokens[i + 1])
+        points.append([x, y])
+    return points
 
 
 def draw_pixel(xx, y):
