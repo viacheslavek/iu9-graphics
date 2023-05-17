@@ -15,7 +15,6 @@ find_package(GLUT REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
 find_package(GLEW REQUIRED)
 
-
 message("FOUND OPENGL - ${OPENGL_FOUND}")
 message("FOUND GLUT - ${GLUT_FOUND}")
 
