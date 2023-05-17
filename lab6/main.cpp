@@ -10,7 +10,13 @@ float beta = 48.f;
 
 int segments = 10;
 
-float speed = 0.01;
+float cylinderRadius = 0.2f; // Радиус цилиндра
+float cylinderVelocity = 0.1f; // Скорость цилиндр
+
+float screenWidth = 1.0f;
+float cylinderPositionX = screenWidth / 2.0f; // Начальная позиция цилиндра по оси X
+float velocity = 0.001f;
+
 
 
 void key(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -35,24 +41,38 @@ void key(GLFWwindow* window, int key, int scancode, int action, int mods) {
             segments -= 5;
         }
         else if (key == GLFW_KEY_D) {
-            speed += 0.01;
+            velocity += 0.0001;
         }
         else if (key == GLFW_KEY_A) {
-            speed -= 0.01;
+            velocity -= 0.0001;
+        }
+        else if (key == GLFW_KEY_R) {
+            cylinderRadius += 0.01f;
+        }
+        else if (key == GLFW_KEY_F) {
+            cylinderRadius -= 0.01f;
+        }
+        else if (key == GLFW_KEY_Q) {
+            velocity = 0.0f;
+        }
+        else if (key == GLFW_KEY_Z) {
+            velocity = 0.001f;
         }
         else if (key == GLFW_KEY_ESCAPE)
             glfwSetWindowShouldClose(window, true);
     }
 }
 
-void draw_cylinder(float radius, float height, int segments) {
+
+
+void draw_cylinder(float radius, float height, int segments, float xPosition) {
     float segmentAngle = 2.0f*M_PI / segments;
 
     glBegin(GL_TRIANGLE_STRIP); // начинаем отрисовку вершин
 
     //Вершины для цилиндра
     for (int i = 0; i <= segments; i++) {
-        float x = radius * cos(i * segmentAngle);
+        float x = radius * cos(i * segmentAngle) + xPosition;
         float y = radius * sin(i * segmentAngle);
         float z = 0.0f;
         glVertex3f(x, y, z); // добавляем вершину на линию, параллельную оси Z
@@ -65,13 +85,30 @@ void draw_cylinder(float radius, float height, int segments) {
         glVertex3f(x, y, height);  // добавляем вершину для нижнего круга
     }
 
-
     glEnd(); // заканчиваем отрисовку вершин
 }
 
-void animate() {
-    
+void updateCylinderPosition()
+{
+    // Изменяем позицию цилиндра на основе скорости и времени
+    cylinderPositionX += velocity;
+
+    // Проверяем, достиг ли цилиндр левой границы экрана
+    if (cylinderPositionX - cylinderRadius <= 0.0f)
+    {
+        // Цилиндр ударился об левую границу, меняем направление
+        velocity = std::abs(velocity); // Вправо
+    }
+
+    // Проверяем, достиг ли цилиндр правой границы экрана
+    if (cylinderPositionX + cylinderRadius >= 1.0)
+    {
+        // Цилиндр ударился об правую границу, меняем направление
+        velocity = -std::abs(velocity); // Влево
+    }
 }
+
+
 
 void display(GLFWwindow* window) {
     glEnable(GL_DEPTH_TEST);
@@ -84,9 +121,11 @@ void display(GLFWwindow* window) {
     glRotatef(beta * 50.f, 1.0, 0.0, 0.0);
     glRotatef(alpha * 50.f, 0.0, 1.0, 0.0);
 
-    animate();
+    updateCylinderPosition();
 
-    draw_cylinder(0.5, 0.6, segments);
+    std::cout << cylinderPositionX << "\n";
+
+    draw_cylinder(cylinderRadius, 0.6, segments, cylinderPositionX);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -98,7 +137,7 @@ int main() {
     if (!glfwInit())
         return -1;
 
-    GLFWwindow* window = glfwCreateWindow(860, 860, "lab6", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(1000, 1000, "lab6", NULL, NULL);
 
     if (window == NULL) {
         glfwTerminate();
