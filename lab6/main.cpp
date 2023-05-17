@@ -2,6 +2,8 @@
 #include <GLFW/glfw3.h>
 #include <cmath>
 #include <iostream>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 using std::sin, std::cos;
 
@@ -17,6 +19,7 @@ float screenWidth = 1.0f;
 float cylinderPositionX = screenWidth / 2.0f; // Начальная позиция цилиндра по оси X
 float velocity = 0.001f;
 
+GLuint textureID;
 
 
 void key(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -63,6 +66,35 @@ void key(GLFWwindow* window, int key, int scancode, int action, int mods) {
     }
 }
 
+void loadTexture(const char* filename)
+{
+    // Загрузка изображения с помощью библиотеки stb_image
+    int width, height, channels;
+    unsigned char* image = stbi_load(filename, &width, &height, &channels, 0);
+    if (!image)
+    {
+        std::cout << "Can't load image" << "\n";
+        return;
+    }
+
+    std::cout << "image load" << "\n";
+
+    // Генерация и привязка текстуры
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    // Настройка параметров текстуры
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Загрузка данных текстуры
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+    // Освобождение памяти, выделенной для изображения
+    stbi_image_free(image);
+}
 
 
 void draw_cylinder(float radius, float height, int segments, float xPosition) {
@@ -75,9 +107,19 @@ void draw_cylinder(float radius, float height, int segments, float xPosition) {
         float x = radius * cos(i * segmentAngle) + xPosition;
         float y = radius * sin(i * segmentAngle);
         float z = 0.0f;
+
+        float u = static_cast<float>(i) / segments;
+        float v = 0.0f;
+
+        glTexCoord2f(u, v);
         glVertex3f(x, y, z); // добавляем вершину на линию, параллельную оси Z
+
         glColor3f(0.f, i / 10.0, 1.f);
+
+        glTexCoord2f(u, 1.0f);
         glVertex3f(x, y, height);  // добавляем вершину на линию высот
+
+        glTexCoord2f(u, 0.0f);
         glVertex3f(x, y, 0.0f); // добавляем вершину для верхнего круга
 
         glVertex3f(x, y, 0.0f); // добавляем вершину для верхнего круга
@@ -123,7 +165,10 @@ void display(GLFWwindow* window) {
 
     updateCylinderPosition();
 
-    std::cout << cylinderPositionX << "\n";
+//    std::cout << cylinderPositionX << "\n";
+
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, textureID);
 
     draw_cylinder(cylinderRadius, 0.6, segments, cylinderPositionX);
 
@@ -147,6 +192,8 @@ int main() {
 
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, key);
+
+    loadTexture("/Users/slavaruswarrior/Documents/GitHub/iu9-graphics/lab6/texture.jpg");
 
     GLfloat light_position[] = {1.0, 1.0, 1.0, 1.0};
     GLfloat diffusion[] = {0.0, 1.0, 0.0, 0.0};
