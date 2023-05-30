@@ -166,11 +166,12 @@ void draw_cylinder2(float radius, float height, int segments, float xPosition) {
     GLfloat vertices[(segments + 1) * 3 * 2];
     GLfloat texCoords[(segments + 1) * 3 * 2];
 
-    float u = static_cast<float>(i) / segments;
-    float v = 0.0f;
-
     // Заполняем массив вершин и текстурных координат
     for (int i = 0; i <= segments; i++) {
+
+        float u = static_cast<float>(i) / segments;
+        float v = 0.0f;
+
         float x = radius * cos(i * segmentAngle) + xPosition;
         float y = radius * sin(i * segmentAngle);
 
@@ -213,6 +214,12 @@ int counter = 0;
 
 void display(GLFWwindow* window) {
 
+
+    // 4 оптимизация: глубинное тестирование
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glfwWindowHint(GLFW_DEPTH_BITS, 12);
+
     counter++;
 
     glEnable(GL_DEPTH_TEST);
@@ -232,7 +239,7 @@ void display(GLFWwindow* window) {
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, textureID);
 
-    draw_cylinder2(cylinderRadius, 0.6, segments, cylinderPositionX);
+    draw_cylinder(cylinderRadius, 0.6, segments, cylinderPositionX);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -294,6 +301,15 @@ int main() {
     }
 
 
+    // 3 оптимизация: отсечение задних граней
+
+//    glEnable(GL_CULL_FACE);
+//    glCullFace(GL_BACK);
+
+
+    // 5 оптимизация:
+    glfwSwapInterval(1);
+
 
     while (!glfwWindowShouldClose(window)) {
         glCallList(cylinderDisplayList);
@@ -309,20 +325,41 @@ int main() {
 }
 
 
-/// история замеров
+/// история замеров: все замеры в режиме анимации с отрисовкой текстур и одним и тем же поворотом
 
 /// Обязателно
 
 /// без всего: 1.66657 секунд на 100 отрисовок
 
-/// добавил дисплейные списки: 0.933791 секунд
+/// добавил дисплейные списки: 0.933791 секунд  (1)
 
-/// добавил вершиный массив: 0.85089
+/// добавил вершиный массив: 0.85089            (2)
 
 /// Дополнительтно
 
-///
+/// Отсчение задних граней:  0.826137 из минусов: отсекается и та часть, которую хотелось бы видеть  (3)
 
+/// Глубинное тестирование: 0.858455 для глубины 24 пикселя и  0.863929 для глубины 2 пикселя -- странное поведение (4)
+/// для 12 пикселей -- 0.77926. В сочетании с Вершиным массивом -- 0.710272
+
+/// двойная буфферизация: 0.85689    (5)
+
+
+/// хотел еще добавить включение буфера кадра и буфера глубины
+//    GLuint framebuffer;
+//    glGenFramebuffers(1, &framebuffer);
+//    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+//
+//    GLuint depthBuffer;
+//    glGenRenderbuffers(1, &depthBuffer);
+//    glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
+//
+//    int screenWidth, screenHeight; // Здесь должны быть значения ширины и высоты окна
+//    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, screenWidth, screenHeight);
+//
+//    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+
+/// но для этого нужен glut, а он на маке m1 не работает((((
 
 
 
