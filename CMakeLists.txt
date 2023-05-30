@@ -11,7 +11,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -g -Wall -Wextra -pedantic -Wformat=2 -
 
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
-find_package(GLUT REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
 find_package(GLEW REQUIRED)
 
@@ -23,3 +22,4 @@ add_subdirectory(lab2)
 add_subdirectory(lab3)
 add_subdirectory(lab4)
 add_subdirectory(lab6)
+add_subdirectory(lab7)
